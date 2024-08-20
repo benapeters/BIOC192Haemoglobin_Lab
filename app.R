@@ -1,6 +1,8 @@
 library(shiny)
 library(rhandsontable)
 library(ggplot2)
+library(ggalt)
+
 
 # Define UI
 ui <- fluidPage(
@@ -9,10 +11,20 @@ ui <- fluidPage(
   mainPanel(
     tabsetPanel(
       tabPanel("Exercise 1",
-               rHandsontableOutput("table1"),
-               plotOutput("linePlot")),  
+               "Table 1, page 67 of your lab book",
+                 fluidRow(
+                   tags$br(),
+                   column(width = 5.5, rHandsontableOutput("table1")),
+                   column(6.5, plotOutput("linePlot")),
+                 )
+               ),
+                
       tabPanel("Exercise 2",
-               rHandsontableOutput("table2"))
+               tags$br(),
+               "Table 3, page 74 of your lab book",
+               rHandsontableOutput("table2"),
+               plotOutput("plot2"))
+      
     )
   )
 )
@@ -40,23 +52,53 @@ server <- function(input, output) {
       spectrum_data <- hot_to_r(input$table1)
       output$linePlot <- renderPlot({
         ggplot(spectrum_data) +
-          geom_line(aes(x = Wavelength, y = Oxy_Hb, color = "Oxy_Hb")) +
+          geom_xspline(aes(x = Wavelength, y = Oxy_Hb, color = "Oxy_Hb"), spline_shape = -0.4) +
           geom_point(aes(x = Wavelength, y = Oxy_Hb, color = "Oxy_Hb")) +
-          geom_line(aes(x = Wavelength, y = Deoxy_Hb, color = "Deoxy_Hb")) +
+          geom_xspline(aes(x = Wavelength, y = Deoxy_Hb, color = "Deoxy_Hb"), spline_shape = -0.4) +
           geom_point(aes(x = Wavelength, y = Deoxy_Hb, color = "Deoxy_Hb")) +
-          labs(title = "Oxy_Hb and Deoxy_Hb Spectrum", x = "Wavelength (nm)", y = "Absorbance") +
-          scale_color_manual(values = c("Oxy_Hb" = "blue", "Deoxy_Hb" = "red"), name = "Legend")
+          labs(title = "Haemoglobin Spectrum", x = "Wavelength (nm)", y = "Absorbance") +
+          scale_color_manual(values = c("Oxy_Hb" = "red", "Deoxy_Hb" = "blue"), name = "Legend") +
+          theme(legend.position = 'bottom') +
+          theme_minimal() +
+          theme(axis.line.x = element_line(color = "black", size = 1),
+                axis.line.y = element_line(color = "black", size = 1),
+                plot.title = element_text(hjust = 0.5))
       })
     }
   })
   
+  
   initial_data2 <- data.frame(
-    A = c("A", "B", "C"),
-    B = c(100, 200, 300)
+    Time_seconds = seq(0,540, by = 30),
+    Percent_Oxy_Hb = rep(NA,19)
   )
   
   output$table2 <- renderRHandsontable({
-    rhandsontable(initial_data2)
+    rhandsontable(initial_data2) %>%
+      hot_col("Time_seconds", format = 0) %>%
+    hot_col("Percent_Oxy_Hb", type = "numeric", strict = TRUE, allowInvalid = FALSE, format = 0.0)
+  })
+  
+  # Reactive data frame
+  reactive_data2 <- reactive({
+    if (!is.null(input$table2)) {
+      hot_to_r(input$table2)
+    } else {
+      initial_data2
+    }
+  })
+  
+  # Render the plot
+  output$plot2 <- renderPlot({
+    data <- reactive_data2()
+    ggplot(data, aes(x = Time_seconds, y = Percent_Oxy_Hb)) +
+      geom_xspline(spline_shape = -0.4) +
+      geom_point() +
+      labs(title = "Oxygen Hemoglobin Over Time", x = "Time (seconds)", y = "Percent Oxy Hb") +
+      theme_minimal() +
+      theme(axis.line.x = element_line(color = "black", size = 1),
+            axis.line.y = element_line(color = "black", size = 1),
+            plot.title = element_text(hjust = 0.5))
   })
   
 }
