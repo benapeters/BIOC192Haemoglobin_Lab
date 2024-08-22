@@ -3,7 +3,7 @@ LABEL maintainer="benapeters"
 ARG shinyapp BIOC192_HaemoglobinLab
 #~wimg 20240614 
 
-RUN R -q -e "install.packages(c('shiny', 'ggplot2', 'rhandsontable'))"
+RUN R -q -e "install.packages(c('shiny', 'ggplot2', 'rhandsontable', 'ggalt'))"
 
 RUN mkdir /opt/app
 COPY app.R /opt/app/
