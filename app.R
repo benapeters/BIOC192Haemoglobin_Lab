@@ -35,7 +35,7 @@ server <- function(input, output) {
   # Create initial data for tables
   spectrum_data <- data.frame(
     Wavelength = c(490,500,510,520,530,540,550,560,570,580,590,600),
-    Oxy_Hb = rep(NA, 12),
+    Oxy_Hb = rep(NA,12),
     Deoxy_Hb = c(.174,.206,.256,.306,.388,.512,.608,.598,.525,.425,.295,.15)
   )
   
@@ -75,7 +75,7 @@ server <- function(input, output) {
   
   output$table2 <- renderRHandsontable({
     rhandsontable(initial_data2) %>%
-      hot_col("Time_seconds", format = 0) %>%
+      hot_col("Time_seconds", format = 0, readOnly = TRUE) %>%
     hot_col("Percent_Oxy_Hb", type = "numeric", strict = TRUE, allowInvalid = FALSE, format = 0.0)
   })
   
@@ -88,18 +88,26 @@ server <- function(input, output) {
     }
   })
   
-  # Render the plot
   output$plot2 <- renderPlot({
     data <- reactive_data2()
-    ggplot(data, aes(x = Time_seconds, y = Percent_Oxy_Hb)) +
-      geom_xspline(spline_shape = -0.4) +
+    p <- ggplot(data, aes(x = Time_seconds, y = Percent_Oxy_Hb)) +
       geom_point() +
       labs(title = "Oxygen Hemoglobin Over Time", x = "Time (seconds)", y = "Percent Oxy Hb") +
       theme_minimal() +
       theme(axis.line.x = element_line(color = "black", size = 1),
             axis.line.y = element_line(color = "black", size = 1),
             plot.title = element_text(hjust = 0.5))
+    
+    if (sum(!is.na(data$Percent_Oxy_Hb)) > 2) {
+      p <- p + geom_xspline(spline_shape = -0.4)
+    } else {
+      p <- p + geom_line()
+    }
+    
+    print(p)
   })
+  
+  
   
 }
 
