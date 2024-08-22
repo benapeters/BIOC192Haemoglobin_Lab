@@ -6,11 +6,12 @@ ARG shinyapp BIOC192_HaemoglobinLab
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
         libproj22 \
+        libproj-dev \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get autoremove -y \
     && apt-get clean
 
-RUN R -q -e "install.packages(c('shiny', 'ggplot2', 'rhandsontable', 'ggalt'))"
+RUN R -q -e "install.packages(c('shiny', 'ggplot2', 'rhandsontable', 'ggalt'), dependencies=TRUE)"
 
 RUN mkdir /opt/app
 COPY app.R /opt/app/
